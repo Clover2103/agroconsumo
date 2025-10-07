@@ -1,0 +1,31 @@
+.primary-form {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.primary-form__content {
+  width: 100%;
+  max-width: 800px;
+  padding: 20px;
+  margin-top: 60px;
+  margin-bottom: 60px;
+  background-color: #FFFFFF;
+  border-radius: 8px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.primary-form__content p {
+  width: 90%;
+  text-align: center;
+  margin: 0 auto;
+  margin-bottom: 20px;
+  font-size: 16px;
+  color: #030606;
+}
+
+.color-red {
+  color: red;
+}
