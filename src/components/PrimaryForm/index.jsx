@@ -121,8 +121,7 @@ const PrimaryForm = () => {
       <div className="primary-form__content">
         <h3 className="primary-form__title">CONOZCAMOS MÁS TU CULTIVO</h3>
         <p className="mb-4">
-          DILIGENCIA EL SIGUIENTE FORMULARIO PARA CALCULAR LAS NECESIDADES DE AGUA
-          EN TU CULTIVO. (<span className="color-red">*</span> Campos obligatorios)
+          DILIGENCIE EL SIGUIENTE FORMATO PARA CALCULAR LA CANTIDAD DE AGUA QUE REQUIERE SU CULTIVO (<span className="color-red">*</span> Campos obligatorios)
         </p>
 
         <form onSubmit={handleSubmit} className="text-start">
@@ -150,6 +149,7 @@ const PrimaryForm = () => {
             </div>
 
             <div className="col-md-6">
+              {/* Primer cambio */}
               <div className="form-floating">
                 <select
                   className="form-select"
@@ -159,8 +159,9 @@ const PrimaryForm = () => {
                 >
                   <option value="">-</option>
                   <option value="1">Siembra</option>
-                  <option value="2">Crecimiento</option>
-                  <option value="3">Cosecha</option>
+                  <option value="2">Floración</option>
+                  <option value="3">Crecimiento</option>
+                  <option value="4">Cosecha</option>
                 </select>
                 <label htmlFor="etapaCultivo">
                   Etapa del cultivo <span className="color-red">*</span>
@@ -222,14 +223,19 @@ const PrimaryForm = () => {
             </div>
 
             <div className="col-md-6">
+              {/* Segundo cambio */}
               <div className="form-floating">
-                <input
-                  type="number"
-                  className="form-control"
+                <select
+                  className="form-select"
                   id="humedad"
                   value={formData.humedad}
                   onChange={handleChange}
-                />
+                >
+                  <option value="">-</option>
+                  <option value="1">Humedad baja (15%)</option>
+                  <option value="2">Humedad media (30%)</option>
+                  <option value="3">Humedad alta o saturación ( mayor al 70% )</option>
+                </select>
                 <label htmlFor="humedad">
                   Humedad del suelo (%) <span className="color-red">*</span>
                 </label>
@@ -254,7 +260,7 @@ const PrimaryForm = () => {
                   <option value="3">Alta</option>
                 </select>
                 <label htmlFor="precipitacion">
-                  Precipitación <span className="color-red">*</span>
+                  precipitación (lluvia reciente) <span className="color-red">*</span>
                 </label>
               </div>
             </div>
@@ -276,13 +282,17 @@ const PrimaryForm = () => {
 
             <div className="col-md-6">
               <div className="form-floating">
-                <input
-                  type="number"
-                  className="form-control"
+                <select
+                  className="form-select"
                   id="radiacionSolar"
                   value={formData.radiacionSolar}
                   onChange={handleChange}
-                />
+                >
+                  <option value="">-</option>
+                  <option value="1">Soleado</option>
+                  <option value="2">Parcialmente nublado</option>
+                  <option value="3">Nublado</option>
+                </select>
                 <label htmlFor="radiacionSolar">
                   Radiación solar (MJ/m²/día) <span className="color-red">*</span>
                 </label>
@@ -291,13 +301,17 @@ const PrimaryForm = () => {
 
             <div className="col-md-6">
               <div className="form-floating">
-                <input
-                  type="number"
-                  className="form-control"
+                <select
+                  className="form-select"
                   id="velocidadViento"
                   value={formData.velocidadViento}
                   onChange={handleChange}
-                />
+                >
+                  <option value="">-</option>
+                  <option value="1">Sin viento</option>
+                  <option value="2">Brisa leve</option>
+                  <option value="3">Viento fuerte</option>
+                </select>
                 <label htmlFor="velocidadViento">
                   Velocidad del viento (m/s) <span className="color-red">*</span>
                 </label>

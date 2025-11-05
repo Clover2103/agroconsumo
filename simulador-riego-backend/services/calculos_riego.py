@@ -2,12 +2,14 @@ from typing import Dict, Any
 import math
 from utils.constantes import (
     ROOT_ZONE_M, FIELD_CAPACITY_MM_PER_M, CROP_MAP, STAGE_MAP, SOIL_MAP,
-    KC_TABLE, METHOD_EFF, PRECIP_CAT_TO_MM, AGUA_CAT_TO_M3
+    KC_TABLE, METHOD_EFF, PRECIP_CAT_TO_MM, AGUA_CAT_TO_M3,
+    # --- NUEVAS CONSTANTES REQUERIDAS ---
+    HUMEDAD_CAT_TO_PCT, RADIACION_CAT_TO_MJ_M2, VIENTO_CAT_TO_MS 
 )
 
 DEFAULT_RADIACION = 20.0
-DEPLETION_FACTOR = 0.5  # fracción de agua aprovechable en el suelo
-MIN_IRRIGATION_MM = 1.0  # mínimo técnico de riego sugerido (mm) cuando existe déficit pequeño
+DEPLETION_FACTOR = 0.5 # fracción de agua aprovechable en el suelo
+MIN_IRRIGATION_MM = 1.0 # mínimo técnico de riego sugerido (mm) cuando existe déficit pequeño
 
 
 # ------------------------
@@ -30,7 +32,7 @@ def _to_key(v: Any) -> str:
 
 
 def _map_inputs(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Normaliza y mapea entradas (acepta códigos o textos)."""
+    """Normaliza y mapea entradas (acepta códigos o textos)"""
     mapped = data.copy()
 
     # Mapear cultivos/etapas/suelos si vienen con códigos (1/2/3) o textos
@@ -56,15 +58,16 @@ def _map_inputs(data: Dict[str, Any]) -> Dict[str, Any]:
     if a_key in AGUA_CAT_TO_M3:
         mapped["agua"] = AGUA_CAT_TO_M3[a_key]
 
-    # convertir numerics que vengan como strings
-    for k in ("superficie", "humedad", "retencion", "precipitacion",
-                "temperatura", "radiacion", "radiacionSolar", "viento",
-                "velocidadViento", "agua", "profundidadRaiz"):
+    # --- MODIFICACIÓN CLAVE: Excluir las categorías de humedad/radiacion/viento ---
+    # Convertir numerics que vengan como strings (solo los que esperamos como float)
+    for k in ("superficie", "retencion", "precipitacion",
+              "temperatura", "radiacion", "viento",
+              "agua", "profundidadRaiz"):
         if mapped.get(k) is not None:
             try:
                 mapped[k] = float(mapped[k])
             except Exception:
-                # si no se puede, dejar el valor original
+                # si no se puede, dejar el valor original (str, None, etc.)
                 pass
 
     return mapped
@@ -90,6 +93,8 @@ def _calculate_et0(temperatura: float, radiacion: float = None, viento: float = 
     """
     rad = radiacion if (radiacion is not None) else DEFAULT_RADIACION
     wind_factor = 1.0 + ((viento or 0.0) / 10.0)  # ejemplo: viento 2 m/s -> factor 1.2
+    # La radiación está en MJ/m2, la fórmula requiere una adaptación.
+    # Se mantiene la lógica original, asegurando que 'rad' sea un float.
     et0 = 0.0023 * (temperatura + 17.8) * math.sqrt(rad) * wind_factor
     return et0
 
@@ -100,7 +105,6 @@ def _generar_recomendacion(d: dict, resultado: dict) -> dict:
     Calcula también 'volumen_riego_recomendado' y 'frecuencia_riego'.
     """
     cultivo = d.get("tipoCultivo", "cultivo")
-    etapa = d.get("etapaCultivo", "etapa")
     suelo = d.get("tipoSuelo", "suelo")
     deficit = resultado.get("RequerimientoNeto_mm", 0.0)
     etc = resultado.get("ETc_mm_per_day", 0.0)
@@ -164,16 +168,33 @@ def calcular_riego(data: Dict[str, Any]) -> Dict[str, Any]:
     superficie = float(d.get("superficie", 0.0))  # ha
     temp = float(d.get("temperatura", 0.0))
     lluvia = float(d.get("precipitacion", 0.0))  # mm
-    humedad_pct = float(d.get("humedad", 0.0))  # %
-    radiacion = d.get("radiacionSolar") or d.get("radiacion") or DEFAULT_RADIACION
-    viento = d.get("velocidadViento") or d.get("viento") or 0.0
     metodo = d.get("metodo") or ""
     tipo_suelo = d.get("tipoSuelo")
 
+    # ------------------------------------------------------------------
+    # --- RECOLECCIÓN Y MAPEO DE CATEGORÍAS MODIFICADAS POR EL USUARIO ---
+    # ------------------------------------------------------------------
+
+    # 1. Humedad: Mapear la categoría ('1','2','3') al porcentaje (%)
+    humedad_key = _to_key(d.get("humedad"))
+    # Si viene como categoría, usa el mapa. Si falla, usar 0.0% como fallback.
+    humedad_pct = HUMEDAD_CAT_TO_PCT.get(humedad_key, 0.0) 
+
+    # 2. Radiación Solar: Mapear categoría ('1','2','3') al valor numérico (MJ/m²)
+    radiacion_key = _to_key(d.get("radiacionSolar") or d.get("radiacion"))
+    radiacion = RADIACION_CAT_TO_MJ_M2.get(radiacion_key, DEFAULT_RADIACION) 
+
+    # 3. Velocidad del Viento: Mapear categoría ('1','2','3') al valor numérico (m/s)
+    viento_key = _to_key(d.get("velocidadViento") or d.get("viento"))
+    viento = VIENTO_CAT_TO_MS.get(viento_key, 0.0)
+
+    # ------------------------------------------------------------------
+    
     # --- Capacidad de campo (mm) ajustada a profundidad radicular ---
     capacidad_campo_mm = _get_field_capacity_mm(tipo_suelo, profundidad_m)
 
     # Agua presente en el suelo (mm)
+    # NOTA: Se usa el valor de 'humedad_pct' mapeado o recolectado.
     agua_suelo_actual_mm = capacidad_campo_mm * (humedad_pct / 100.0)
 
     # Precipitación efectiva (heurística 80%)
